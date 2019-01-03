@@ -3,6 +3,7 @@ package mapstorage
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type mapStorage struct {
@@ -30,4 +31,23 @@ func (s *mapStorage) Set(key, value string) error {
 func (s *mapStorage) Delete(key string) error {
 	delete(s.db, key)
 	return nil
+}
+
+func (s *mapStorage) Keys(key string) ([]string, error) {
+	var keys []string
+	var values []string
+
+	for k, v := range s.db {
+		//if k, found := s.db[key]; found {
+
+		if strings.Contains(k, key) {
+			fmt.Println(v)
+			keys = append(keys, k)
+			values = append(values, v)
+		}
+	}
+
+	fmt.Println("KEYS - ", keys)
+	fmt.Println("KEY - ", key)
+	return keys, nil
 }

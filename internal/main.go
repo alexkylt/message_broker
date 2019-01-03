@@ -7,7 +7,7 @@ import (
 
 	"github.com/alexkylt/message_broker/internal/pkg/server"
 	"github.com/alexkylt/message_broker/internal/pkg/storage/dbstorage"
-	_ "github.com/alexkylt/message_broker/internal/pkg/storage/mapstorage"
+	"github.com/alexkylt/message_broker/internal/pkg/storage/mapstorage"
 )
 
 func main() {
@@ -24,8 +24,8 @@ func main() {
 		srv := server.InitServer(port, strg)
 		srv.Run()
 	default:
-		//strg := mapstorage.InitStorage()
-		//srv := server.InitServer(port, strg)
-		//srv.Run()
+		strg := mapstorage.InitStorage()
+		srv := server.InitServer(port, strg)
+		srv.Run()
 	}
 }

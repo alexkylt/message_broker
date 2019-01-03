@@ -19,6 +19,10 @@ type key struct {
 	Value string `json:"value"`
 }
 
+type pattern struct {
+	Pattern string `json:"pattern"`
+}
+
 func sendRequest(arguments string, host string, port int) error {
 
 	arguments = strings.TrimSuffix(arguments, "\n")
@@ -79,9 +83,10 @@ func sendRequest(arguments string, host string, port int) error {
 		io.Copy(os.Stdout, resp.Body)
 	case "KEYS":
 		url := fmt.Sprintf("http://%s:%d", host, port)
-		str := fmt.Sprintf(`{"pattern": "%s"}`, args[1])
-		var jsonStr = []byte(str)
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+		str := pattern{Pattern: args[1]}
+		buff := new(bytes.Buffer)
+		json.NewEncoder(buff).Encode(str)
+		req, err := http.NewRequest("POST", url, buff)
 
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := client.Do(req)

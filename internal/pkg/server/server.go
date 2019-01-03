@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	_ "strings"
 	_ "time"
 
@@ -24,7 +25,13 @@ type key struct {
 	Value string `json:"value"`
 }
 
+type pattern struct {
+	Pattern string `json:"pattern"`
+}
+
 var keymap key
+
+var patternmap pattern
 
 func InitServer(port int, storage storage.StorageInterface) *serverCfg {
 	server := &serverCfg{port: port, storage: storage}
@@ -79,7 +86,7 @@ func (s *serverCfg) generalHandler(w http.ResponseWriter, r *http.Request) {
 		if err := s.postHandler(w, r); err != nil {
 			// w.httpCode(404)
 
-			log.Print("ALARM!")
+			log.Print("ALARM!", err)
 		}
 	}
 }
@@ -128,7 +135,7 @@ func (s *serverCfg) delHandler(w http.ResponseWriter, r *http.Request) error {
 		log.Print(err)
 		return err
 	}
-	for k, _ := range r.Form {
+	for k := range r.Form {
 		fmt.Println("Before delete - ", k, s.storage)
 		value := s.storage.Delete(k)
 		//fmt.Fprintf(w, value)
@@ -138,15 +145,14 @@ func (s *serverCfg) delHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *serverCfg) postHandler(w http.ResponseWriter, r *http.Request) error {
-
-	fmt.Println("POST params were:", r.URL.Query())
-	err := json.NewDecoder(r.Body).Decode(&keymap)
+	err := json.NewDecoder(r.Body).Decode(&patternmap)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return err
 	}
 	// TODO think about var
-	s.storage.Keys(keymap.Name)
-	// fmt.Println(k.Name, k.Value, value, s.storage, act)
+	//fmt.Fprintf(w, "PATTERN - %s", patternmap.Pattern)
+	keys, err := s.storage.Keys(patternmap.Pattern)
+	fmt.Fprintf(w, strings.Join(keys, ","))
 	return nil
 }
