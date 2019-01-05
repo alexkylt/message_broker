@@ -94,7 +94,7 @@ func (s *serverCfg) generalHandler(w http.ResponseWriter, r *http.Request) {
 func (s *serverCfg) getHandler(w http.ResponseWriter, r *http.Request) error {
 	fmt.Println("GET params were:", r.URL.Query())
 	fmt.Println("getHandler", r.Form)
-	fmt.Println("getHandler", r.ParseForm)
+	// fmt.Println("getHandler", r.ParseForm)
 	if err := r.ParseForm(); err != nil {
 		fmt.Println("error - ", err)
 		log.Print(err)
@@ -116,8 +116,9 @@ func (s *serverCfg) getHandler(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *serverCfg) setHandler(w http.ResponseWriter, r *http.Request) error {
-	fmt.Println("SET params were:", r.URL.Query())
+
 	err := json.NewDecoder(r.Body).Decode(&keymap)
+	fmt.Println("SET params were:", r.URL.Query(), err)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return err

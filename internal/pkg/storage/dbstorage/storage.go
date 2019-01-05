@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	DB_USER     = "lalai"
-	DB_PASSWORD = "lalai"
+	DB_USER     = "devuser"
+	DB_PASSWORD = "devuser"
 	DB_NAME     = "storage_db"
 	PORT        = 5432
 	HOST        = "localhost"
@@ -61,6 +61,7 @@ func (d *dbStorage) Set(key, value string) error {
 	var lastInsertId int
 	datetime := time.Now().Format(time.RFC3339)
 	insert_stmt := `INSERT INTO kv_storage(key_name, key_value, datetime) VALUES($1,$2,$3) returning id;`
+	fmt.Println("VALUES to insert:", key, value)
 	err := d.db.QueryRow(insert_stmt, key, value, datetime).Scan(&lastInsertId)
 
 	if err, ok := err.(*pq.Error); ok {
