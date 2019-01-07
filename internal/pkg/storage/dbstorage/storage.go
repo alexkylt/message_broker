@@ -14,7 +14,7 @@ const (
 	DB_PASSWORD = "devuser"
 	DB_NAME     = "storage_db"
 	PORT        = 5432
-	HOST        = "localhost"
+	HOST        = "postgres"
 )
 
 type dbStorage struct {

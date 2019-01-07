@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
+
 	"net/http"
 	_ "net/url"
 	"os"
-	"strings"
 )
 
 type key struct {
@@ -71,7 +72,7 @@ func sendRequest(arguments string, host string, port int) error {
 	case "DEL":
 		url := fmt.Sprintf("http://%s:%d/?%s", host, port, args[1])
 		req, err := http.NewRequest("DELETE", url, nil)
-		fmt.Println(req)
+		//fmt.Println(req)
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -115,7 +116,7 @@ func main() {
 	var host string
 
 	flag.IntVar(&port, "port", 9090, "specify port to use.  defaults to 9090.")
-	flag.StringVar(&host, "host", "127.0.0.1", "specify host to use.  defaults to 127.0.0.1")
+	flag.StringVar(&host, "host", "server", "specify host to use.  defaults to 'server' docker container")
 	flag.Parse()
 	fmt.Println(port, host)
 

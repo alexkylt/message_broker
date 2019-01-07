@@ -118,7 +118,7 @@ func (s *serverCfg) getHandler(w http.ResponseWriter, r *http.Request) error {
 func (s *serverCfg) setHandler(w http.ResponseWriter, r *http.Request) error {
 
 	err := json.NewDecoder(r.Body).Decode(&keymap)
-	fmt.Println("SET params were:", r.URL.Query(), err)
+	//fmt.Println("SET params were:", r.URL.Query(), err)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return err
@@ -137,10 +137,11 @@ func (s *serverCfg) delHandler(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	for k := range r.Form {
-		fmt.Println("Before delete - ", k, s.storage)
-		value := s.storage.Delete(k)
+		//fmt.Println("Before delete - ", k, s.storage)
+		//value := s.storage.Delete(k)
+		s.storage.Delete(k)
 		//fmt.Fprintf(w, value)
-		fmt.Println("After delete - ", k, s.storage, value)
+		//fmt.Println("After delete - ", k, s.storage, value)
 	}
 	return nil
 }
