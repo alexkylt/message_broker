@@ -2,7 +2,6 @@ SERVER_BIN := "server.bin"
 CLIENT_BIN := "client.bin"
 
 BIN_DIR := $(GOPATH)/bin
-# BUILD_DIR=${GOPATH}/src/github.com/${GITHUB_USERNAME}
 PKG := "github.com/alexkylt/message_broker"
 # Packages lists
 PACKAGES=$(shell go list ./...)
@@ -24,28 +23,24 @@ STORAGE_MODE ?= "db"
 SERVER_PORT ?= 9090
 SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
+DOCKER_BUILD_BUILDER := builder
+BINARIES := $(shell pwd)/cmds
+# GOARCH = amd64
+goarch = $(shell go env GOARCH)
+goos = $(shell go env GOOS)
+
 .PHONY: all build_server build_client
 
-all: build_server build_client docker_network docker_build_server docker_build_client docker_build_psql docker_run_psql docker_run_server docker_run_client
-
-gobuild: ## 
-	
-
-dep: ## Get the dependencies
-	@go get -v -d ./...
-
-govet: ## Runs govet against all packages.
-	@echo Running GOVET
-	@go vet ./... || exit 1
+all: docker_build_builder build_server build_client docker_network docker_build_server docker_build_client docker_build_psql docker_run_psql docker_run_server docker_run_client
 
 goimports: ## Runs goimports against all packages.
 	@echo Running goimports
 
 	@for package in $(PACKAGES); do \
 		echo "Checking "$$package; \
-		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
+		files=$$(docker run $(DOCKER_BUILD_BUILDER) list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
 		if [ "$$files" ]; then \
-			goimports_output=$$(goimports -l -d $$files 2>&1); \
+			goimports_output=$$(docker run --entrypoint="goimports" $(DOCKER_BUILD_BUILDER) -l -d $$files 2>&1); \
 			if [ "$$goimports_output" ]; then \
 				echo "$$goimports_output"; \
 				echo "goimports failure"; \
@@ -54,16 +49,25 @@ goimports: ## Runs goimports against all packages.
 		fi; \
 	done
 	@echo "goimports success"; \
+
 # TODO FIXME!!!!
 golint: ## Runs golint against all packages.
 	@echo Running GOLINT
-	@golint ./... || exit 1
+	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) ./... || exit 1
 
-build_server: ## Build the binary file for server
-	@go build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
+docker_build_builder: ## Build default docker image
+	@docker build -t "$(DOCKER_BUILD_BUILDER)" -f Dockerfile.build .
 
-build_client: ## Build the binary file for client
-	@go build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
+govet: ## Runs govet against all packages.
+	@echo Running GOVET
+	@docker run -e CGO_ENABLED=0 $(DOCKER_BUILD_BUILDER) vet ./... || exit 1
+
+# -e GOOS=$(goos) -e GOARCH=$(goarch) -e CGO_ENABLED=0
+build_server: docker_build_builder ## Build the binary file for server
+	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
+
+build_client: docker_build_builder ## Build the binary file for server
+	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
 
 docker_network: ##
 	@if [ $(shell docker network ls --format '{{.Name}}'| grep $(NETWORK)| wc -l) -eq 0 ]; then \

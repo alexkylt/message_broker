@@ -1,7 +1,6 @@
 package server
 
 import (
-	_ "database/sql"
 	"encoding/json"
 	"fmt"
 	"log"

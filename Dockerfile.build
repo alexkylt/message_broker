@@ -1,17 +1,19 @@
 FROM golang:1.11.1-alpine
 
 CMD cd $GOPATH
-
 ADD . /go/src/github.com/alexkylt/message_broker
 
 RUN apk update && apk upgrade && \
-    apk add --no-cache git
+    apk add --no-cache git gcc
 
 RUN go get -d -v ./...
 
-# RUN go get github.com/mccurdyc/goblogs/docker-multi-stage-builds/hello
+RUN go get -u golang.org/x/lint/golint
 
-# WORKDIR $GOPATH/src/github.com/mccurdyc/goblogs/docker-multi-stage-builds/hello
+RUN go get golang.org/x/tools/cmd/goimports
+
+WORKDIR /go/src/github.com/alexkylt/message_broker
+# ENV GOOS=linux
+# ENV GOARCH=amd64
 
 ENTRYPOINT ["go"]
-

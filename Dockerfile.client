@@ -1,21 +1,9 @@
 FROM golang:1.11.1-alpine
-LABEL maintainer "Alex <alexkylt@gmail.com>"
 
-RUN apk add --no-cache git mercurial \
-    && go get github.com/lib/pq \
-    && apk del git mercurial
-
-# RUN go get github.com/lib/pq
 # Copy the local package files to the container's workspace.
-ADD . /go/src/github.com/alexkylt/message_broker
-
-# build executable
-WORKDIR "/go/src/github.com/alexkylt/message_broker/internal/pkg/client"
-# RUN dep ensure OR RUN go get -d -v ./...
-RUN go build -o /go/bin/client client.go
+COPY cmds . /go/bin/
 
 # execute 
-ENTRYPOINT ["/go/bin/client"]
+ENTRYPOINT ["/go/bin/cmds/client.bin"]
 # Document that the service listens on port 8080.
-# EXPOSE 9090
-
+EXPOSE 80
