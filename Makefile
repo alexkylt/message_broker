@@ -33,12 +33,18 @@ goos = $(shell go env GOOS)
 
 .PHONY: all build_server build_client
 
-all: build_docker_builder docker_network build_docker_server build_docker_client build_docker_psql build_server build_client docker_run_psql docker_run_server docker_run_client
+all: build_docker_builder check docker_network build_docker_server build_docker_client build_docker_psql build_server build_client docker_run_psql docker_run_server docker_run_client
+
+check: build_docker_builder goimports golint govet
+
+
 
 build_docker_builder: ## Build default docker image
 	@docker build -t "$(DOCKER_BUILD_BUILDER)" -f Dockerfile.build .
+	# @if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_BUILD_BUILDER)$$ | wc -l) -eq 0 ]; then \
+	# fi
 
-goimports: build_docker_builder ## Runs goimports against all packages.
+goimports: ## build_docker_builder Runs goimports against all packages.
 	@echo Running goimports
 
 	@for package in $(PACKAGES); do \
@@ -55,14 +61,17 @@ goimports: build_docker_builder ## Runs goimports against all packages.
 	done
 	@echo "goimports success"; \
 
-# TODO FIXME!!!!
-golint: build_docker_builder ## Runs golint against all packages.
-	@echo Running GOLINT
-	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) ./... || exit 1
-
-govet: build_docker_builder ## Runs govet against all packages.
+govet: ## build_docker_builder Runs govet against all packages.
 	@echo Running GOVET
 	@docker run -e CGO_ENABLED=0 $(DOCKER_BUILD_BUILDER) vet ./... || exit 1
+	@echo "GOVET success";
+
+# TODO FIXME!!!!
+golint: ## build_docker_builder Runs golint against all packages.
+	@echo Running GOLINT
+	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) -set_exit_status ./... || exit 1
+	
+	@echo "GOLINT success";
 
 docker_network: ##
 	@if [ $(shell docker network ls --format '{{.Name}}'| grep $(NETWORK)| wc -l) -eq 0 ]; then \
@@ -106,10 +115,11 @@ docker_run_client: ## Run default docker image
 
 clean: ## Remove previous builds
 	@rm -r -f $(BINARIES)
-	# docker stop $(shell docker ps -a -q)
-	# docker rm $(shell docker ps -a -q)
-	# @docker image prune --all
+	@docker stop $(shell docker ps -a -q)
+	@docker rm $(shell docker ps -a -q)
+	@docker image prune --all
 
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
