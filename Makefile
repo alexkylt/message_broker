@@ -33,7 +33,7 @@ goos = $(shell go env GOOS)
 
 .PHONY: all build_server build_client
 
-all: build_docker_builder check docker_network build_docker_server build_docker_client build_docker_psql build_server build_client docker_run_psql docker_run_server docker_run_client
+all: build_docker_builder check docker_network build_server build_client docker_server docker_client docker_psql docker_run_psql docker_run_server docker_run_client
 
 check: build_docker_builder goimports golint govet
 
@@ -78,35 +78,35 @@ docker_network: ##
 		@docker network create $(NETWORK); \
 	fi
 
-build_docker_server: docker_network build_server ## Build default docker image
-	@docker build -t "$(DOCKER_BUILD_SERVER)" -f Dockerfile.server .
-
-build_docker_client: docker_network build_client ## Build default docker image
-	@docker build -t "$(DOCKER_BUILD_CLIENT)" -f Dockerfile.client .
-
-build_docker_psql: docker_network ## Build default docker image
-	@docker build -t "$(DOCKER_BUILD_PSQL)" -f Dockerfile.psql .
-
 # -e GOOS=$(goos) -e GOARCH=$(goarch) -e CGO_ENABLED=0
-build_server: build_docker_builder ## Build the binary file for server
+build_server: ## build_docker_builder Build the binary file for server
 	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
 
-build_client: build_docker_builder ## Build the binary file for server
+build_client: ## build_docker_builder Build the binary file for server
 	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
 
-docker_run_psql: docker_network## Run default docker image
+docker_run_psql: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_PSQL); \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
 	fi
-#   		--network-alias $(DOCKER_IMAGE_SERVER).$(NETWORK)
-docker_run_server: ## Run default docker image
+
+docker_server: docker_network build_server ## Build default docker image
+	@docker build -t "$(DOCKER_BUILD_SERVER)" -f Dockerfile.server .
+
+docker_client: docker_network build_client ## Build default docker image
+	@docker build -t "$(DOCKER_BUILD_CLIENT)" -f Dockerfile.client .
+
+docker_psql: docker_network ## Build default docker image
+	@docker build -t "$(DOCKER_BUILD_PSQL)" -f Dockerfile.psql .
+
+docker_run_server: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_SERVER); \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
 	fi
 
-docker_run_client: ## Run default docker image
+docker_run_client: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_CLIENT)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_CLIENT); \
 		docker run --rm --network $(NETWORK) --name=$(DOCKER_IMAGE_CLIENT) -it $(DOCKER_BUILD_CLIENT) --port=$(SERVER_PORT) \
