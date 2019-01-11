@@ -34,12 +34,15 @@ goos = $(shell go env GOOS)
 .PHONY: all build_server build_client
 
 all: build_docker_builder check docker_network build_server build_client docker_server docker_client docker_psql docker_run_psql docker_run_server docker_run_client
+# golint 
+check: build_docker_builder goimports govet
 
-check: build_docker_builder goimports golint govet
 
 
+init:
+	mkdir $(BINARIES)
 
-build_docker_builder: ## Build default docker image
+build_docker_builder: init ## Build default docker image
 	@docker build -t "$(DOCKER_BUILD_BUILDER)" -f Dockerfile.build .
 	# @if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_BUILD_BUILDER)$$ | wc -l) -eq 0 ]; then \
 	# fi
@@ -67,11 +70,11 @@ govet: ## build_docker_builder Runs govet against all packages.
 	@echo "GOVET success";
 
 # TODO FIXME!!!!
-golint: ## build_docker_builder Runs golint against all packages.
-	@echo Running GOLINT
-	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) -set_exit_status ./... || exit 1
-	
-	@echo "GOLINT success";
+# golint: ## build_docker_builder Runs golint against all packages.
+# 	@echo Running GOLINT
+# 	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) -set_exit_status ./... || exit 1
+# 	
+# 	@echo "GOLINT success";
 
 docker_network: ##
 	@if [ $(shell docker network ls --format '{{.Name}}'| grep $(NETWORK)| wc -l) -eq 0 ]; then \
@@ -79,11 +82,12 @@ docker_network: ##
 	fi
 
 # -e GOOS=$(goos) -e GOARCH=$(goarch) -e CGO_ENABLED=0
-build_server: ## build_docker_builder Build the binary file for server
+#--user $(id -u):$(id -g)1
+build_server: ## build_docker_builder Build the binary file for server	
 	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
 
 build_client: ## build_docker_builder Build the binary file for server
-	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
+	@docker run -u $(id -u):$(id -g) -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
 
 docker_run_psql: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
@@ -113,12 +117,11 @@ docker_run_client: docker_network ## Run default docker image
 		--host=$(SERVER_HOST); \
 	fi
 
+# @docker stop $(shell docker ps -a -q)
+# @docker rm $(shell docker ps -a -q)
+# @docker image prune --all
 clean: ## Remove previous builds
 	@rm -r -f $(BINARIES)
-	@docker stop $(shell docker ps -a -q)
-	@docker rm $(shell docker ps -a -q)
-	@docker image prune --all
-
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
