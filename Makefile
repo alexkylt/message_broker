@@ -30,6 +30,7 @@ BINARIES := $(CURRENT_DIR)/cmds
 # GOARCH = amd64
 goarch = $(shell go env GOARCH)
 goos = $(shell go env GOOS)
+timestamp := $(shell date "+%Y-%m-%d---%H-%M-%S")
 
 .PHONY: all build_server build_client
 
@@ -40,7 +41,18 @@ check: build_docker_builder goimports govet
 
 
 init:
-	mkdir $(BINARIES)
+	@if [ -d "$(BINARIES)" ]; then  \
+		if [ -L "$(BINARIES)" ]; then \
+			rm -f $(BINARIES); \
+			mkdir $(BINARIES); \
+		else \
+			rm -r -f $(BINARIES); \
+			mkdir $(BINARIES); \
+		fi \
+	else \
+		mkdir $(BINARIES); \
+	fi \
+	
 
 build_docker_builder: init ## Build default docker image
 	@docker build -t "$(DOCKER_BUILD_BUILDER)" -f Dockerfile.build .
@@ -91,7 +103,7 @@ build_client: ## build_docker_builder Build the binary file for server
 
 docker_run_psql: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
-		echo starting $(DOCKER_IMAGE_PSQL); \
+		echo "START" $(DOCKER_IMAGE_PSQL); \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
 	fi
 
@@ -102,7 +114,9 @@ docker_client: docker_network build_client ## Build default docker image
 	@docker build -t "$(DOCKER_BUILD_CLIENT)" -f Dockerfile.client .
 
 docker_psql: docker_network ## Build default docker image
+	@echo "START" $(timestamp)
 	@docker build -t "$(DOCKER_BUILD_PSQL)" -f Dockerfile.psql .
+	@echo "END" $(timestamp)
 
 docker_run_server: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 0 ]; then \
@@ -120,6 +134,7 @@ docker_run_client: docker_network ## Run default docker image
 # @docker stop $(shell docker ps -a -q)
 # @docker rm $(shell docker ps -a -q)
 # @docker image prune --all
+# docker ps --filter "status=exited" | grep 'weeks ago' | awk '{print $1}' | xargs --no-run-if-empty docker rm
 clean: ## Remove previous builds
 	@rm -r -f $(BINARIES)
 
