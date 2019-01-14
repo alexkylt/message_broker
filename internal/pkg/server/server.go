@@ -6,17 +6,15 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	_ "strings"
-	_ "time"
 
 	"github.com/alexkylt/message_broker/internal/pkg/storage"
-	_ "github.com/lib/pq"
 )
 
-type serverCfg struct {
+// Config ...
+type Config struct {
 	host    string
 	port    int
-	storage storage.StorageInterface
+	storage storage.StrgInterface
 }
 
 type key struct {
@@ -31,21 +29,21 @@ type pattern struct {
 var keymap key
 
 var patternmap pattern
-
-func InitServer(port int, storage storage.StorageInterface) *serverCfg {
-	server := &serverCfg{port: port, storage: storage}
+// InitServer : initialize server with the appropriate storage
+func InitServer(port int, storage storage.StrgInterface) *Config {
+	server := &Config{port: port, storage: storage}
 	http.HandleFunc("/", server.generalHandler)
 	return server
 }
-
-func (s *serverCfg) Run() error {
+// Run ...
+func (s *Config) Run() error {
 	url := fmt.Sprintf("%s:%d", s.host, s.port)
 
 	log.Fatal(http.ListenAndServe(url, nil))
 	return nil
 }
 
-func (s *serverCfg) generalHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("generalHandler")
 
 	switch r.Method {
@@ -90,7 +88,7 @@ func (s *serverCfg) generalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *serverCfg) getHandler(w http.ResponseWriter, r *http.Request) error {
+func (s *Config) getHandler(w http.ResponseWriter, r *http.Request) error {
 	fmt.Println("GET params were:", r.URL.Query())
 	fmt.Println("getHandler", r.Form)
 	// fmt.Println("getHandler", r.ParseForm)
@@ -106,15 +104,15 @@ func (s *serverCfg) getHandler(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			fmt.Fprintf(w, value)
 		} else {
-			tuple_value := fmt.Sprintf("(%s, %s)", k, value)
-			fmt.Fprintf(w, tuple_value)
+			tupleValue := fmt.Sprintf("(%s, %s)", k, value)
+			fmt.Fprintf(w, tupleValue)
 		}
 
 	}
 	return nil
 }
 
-func (s *serverCfg) setHandler(w http.ResponseWriter, r *http.Request) error {
+func (s *Config) setHandler(w http.ResponseWriter, r *http.Request) error {
 
 	err := json.NewDecoder(r.Body).Decode(&keymap)
 	//fmt.Println("SET params were:", r.URL.Query(), err)
@@ -128,7 +126,7 @@ func (s *serverCfg) setHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (s *serverCfg) delHandler(w http.ResponseWriter, r *http.Request) error {
+func (s *Config) delHandler(w http.ResponseWriter, r *http.Request) error {
 
 	if err := r.ParseForm(); err != nil {
 		fmt.Println("error - ", err)
@@ -145,7 +143,7 @@ func (s *serverCfg) delHandler(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (s *serverCfg) postHandler(w http.ResponseWriter, r *http.Request) error {
+func (s *Config) postHandler(w http.ResponseWriter, r *http.Request) error {
 	err := json.NewDecoder(r.Body).Decode(&patternmap)
 	if err != nil {
 		http.Error(w, err.Error(), 400)

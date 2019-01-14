@@ -36,7 +36,7 @@ timestamp := $(shell date "+%Y-%m-%d---%H-%M-%S")
 
 all: build_docker_builder check docker_network build_server build_client docker_server docker_client docker_psql docker_run_psql docker_run_server docker_run_client
 # golint 
-check: build_docker_builder goimports govet
+check: build_docker_builder goimports govet golint
 
 
 
@@ -59,7 +59,7 @@ build_docker_builder: init ## Build default docker image
 	# @if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_BUILD_BUILDER)$$ | wc -l) -eq 0 ]; then \
 	# fi
 
-goimports: ## build_docker_builder Runs goimports against all packages.
+goimports: build_docker_builder ## build_docker_builder Runs goimports against all packages.
 	@echo Running goimports
 
 	@for package in $(PACKAGES); do \
@@ -76,17 +76,17 @@ goimports: ## build_docker_builder Runs goimports against all packages.
 	done
 	@echo "goimports success"; \
 
-govet: ## build_docker_builder Runs govet against all packages.
+govet: build_docker_builder ## build_docker_builder Runs govet against all packages.
 	@echo Running GOVET
 	@docker run -e CGO_ENABLED=0 $(DOCKER_BUILD_BUILDER) vet ./... || exit 1
 	@echo "GOVET success";
 
 # TODO FIXME!!!!
-# golint: ## build_docker_builder Runs golint against all packages.
-# 	@echo Running GOLINT
-# 	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) -set_exit_status ./... || exit 1
-# 	
-# 	@echo "GOLINT success";
+golint: build_docker_builder ## build_docker_builder Runs golint against all packages.
+	@echo Running GOLINT
+	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) -set_exit_status ./... || exit 1
+	
+	@echo "GOLINT success";
 
 docker_network: ##
 	@if [ $(shell docker network ls --format '{{.Name}}'| grep $(NETWORK)| wc -l) -eq 0 ]; then \
@@ -95,10 +95,10 @@ docker_network: ##
 
 # -e GOOS=$(goos) -e GOARCH=$(goarch) -e CGO_ENABLED=0
 #--user $(id -u):$(id -g)1
-build_server: ## build_docker_builder Build the binary file for server	
+build_server: init build_docker_builder ## build_docker_builder Build the binary file for server	
 	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
 
-build_client: ## build_docker_builder Build the binary file for server
+build_client: init build_docker_builder ## build_docker_builder Build the binary file for server
 	@docker run -u $(id -u):$(id -g) -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
 
 docker_run_psql: docker_network ## Run default docker image

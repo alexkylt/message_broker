@@ -1,6 +1,6 @@
 package storage
-
-type StorageInterface interface {
+// StrgInterface ... interface
+type StrgInterface interface {
 	Get(key string) (string, error)
 	Set(key, value string) error
 	Delete(key string) error

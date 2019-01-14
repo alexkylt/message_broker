@@ -10,65 +10,65 @@ import (
 )
 
 const (
-	DB_USER     = "devuser"
-	DB_PASSWORD = "devuser"
-	DB_NAME     = "storage_db"
-	PORT        = 5432
-	HOST        = "postgres"
+	dbUser     = "devuser"
+	dbPassword = "devuser"
+	dbName     = "storage_db"
+	port        = 5432
+	host        = "postgres"
 )
-
-type dbStorage struct {
+// DbStorage ...
+type DbStorage struct {
 	db *sql.DB
 }
-
-func InitStorage() *dbStorage {
+// InitStorage ...
+func InitStorage() *DbStorage {
 
 	connection := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		HOST, PORT, DB_USER, DB_PASSWORD, DB_NAME)
+		host, port, dbUser, dbPassword, dbName)
 	db, err := sql.Open("postgres", connection)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return &dbStorage{db: db}
+	return &DbStorage{db: db}
 }
+// Get ...
+func (d *DbStorage) Get(key string) (string, error) {
 
-func (d *dbStorage) Get(key string) (string, error) {
+	var keyValue string
+	selectStmt := `SELECT key_value FROM kv_storage where key_name = $1;`
 
-	var key_value string
-	select_stmt := `SELECT key_value FROM kv_storage where key_name = $1;`
+	row := d.db.QueryRow(selectStmt, key)
+	err := row.Scan(&keyValue)
 
-	row := d.db.QueryRow(select_stmt, key)
-	err := row.Scan(&key_value)
-
-	fmt.Println(row, err, select_stmt, key, key_value)
+	fmt.Println(row, err, selectStmt, key, keyValue)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			value := fmt.Sprintf("There is no %s key in th db.", key)
-			return value, err
+			keyValue = fmt.Sprintf("There is no %s key in th db.", key)
+			// return value, err
 		} else {
 			errHandler(err)
 		}
 	}
 
-	return key_value, nil
+	return keyValue, nil
 }
+// Set ...
+func (d *DbStorage) Set(key, value string) error {
 
-func (d *dbStorage) Set(key, value string) error {
-
-	var lastInsertId int
+	var lastInsertID int
 	datetime := time.Now().Format(time.RFC3339)
-	insert_stmt := `INSERT INTO kv_storage(key_name, key_value, datetime) VALUES($1,$2,$3) returning id;`
+	insertStmt := `INSERT INTO kv_storage(key_name, key_value, datetime) VALUES($1,$2,$3) returning id;`
 	fmt.Println("VALUES to insert:", key, value)
-	err := d.db.QueryRow(insert_stmt, key, value, datetime).Scan(&lastInsertId)
+	err := d.db.QueryRow(insertStmt, key, value, datetime).Scan(&lastInsertID)
 
 	if err, ok := err.(*pq.Error); ok {
 		fmt.Println("pq error:", err.Code.Name(), err.Code)
 		if err.Code == "23505" {
-			update_stmt := `UPDATE kv_storage set key_value=$1, datetime=$2 where key_name=$3 returning id;`
-			err := d.db.QueryRow(update_stmt, value, datetime, key).Scan(&lastInsertId)
+			updateStmt := `UPDATE kv_storage set key_value=$1, datetime=$2 where key_name=$3 returning id;`
+			err := d.db.QueryRow(updateStmt, value, datetime, key).Scan(&lastInsertID)
 			if err != nil {
 				errHandler(err)
 			}
@@ -76,12 +76,12 @@ func (d *dbStorage) Set(key, value string) error {
 			errHandler(err)
 		}
 	}
-	fmt.Println("last inserted id =", lastInsertId, err)
+	fmt.Println("last inserted id =", lastInsertID, err)
 
 	return nil
 }
-
-func (d *dbStorage) Delete(key string) error {
+// Delete ...
+func (d *DbStorage) Delete(key string) error {
 
 	sqlStatement := `delete from kv_storage where key_name=$1;`
 	res, err := d.db.Exec(sqlStatement, key)
@@ -98,12 +98,12 @@ func errHandler(err error) {
 		log.Fatal(err)
 	}
 }
+// Keys ...
+func (d *DbStorage) Keys(pattern string) ([]string, error) {
 
-func (d *dbStorage) Keys(pattern string) ([]string, error) {
+	selectStmt := `SELECT key_value FROM kv_storage where key_name like '%$1%';`
 
-	select_stmt := `SELECT key_value FROM kv_storage where key_name like '%$1%';`
-
-	rows, err := d.db.Query(select_stmt, pattern)
+	rows, err := d.db.Query(selectStmt, pattern)
 	//err := row.Scan(&key_value)
 
 	values := make([]string, 0)
