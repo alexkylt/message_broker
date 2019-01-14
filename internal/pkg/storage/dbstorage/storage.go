@@ -13,13 +13,15 @@ const (
 	dbUser     = "devuser"
 	dbPassword = "devuser"
 	dbName     = "storage_db"
-	port        = 5432
-	host        = "postgres"
+	port       = 5432
+	host       = "postgres"
 )
+
 // DbStorage ...
 type DbStorage struct {
 	db *sql.DB
 }
+
 // InitStorage ...
 func InitStorage() *DbStorage {
 
@@ -33,6 +35,7 @@ func InitStorage() *DbStorage {
 
 	return &DbStorage{db: db}
 }
+
 // Get ...
 func (d *DbStorage) Get(key string) (string, error) {
 
@@ -55,6 +58,7 @@ func (d *DbStorage) Get(key string) (string, error) {
 
 	return keyValue, nil
 }
+
 // Set ...
 func (d *DbStorage) Set(key, value string) error {
 
@@ -80,6 +84,7 @@ func (d *DbStorage) Set(key, value string) error {
 
 	return nil
 }
+
 // Delete ...
 func (d *DbStorage) Delete(key string) error {
 
@@ -98,6 +103,7 @@ func errHandler(err error) {
 		log.Fatal(err)
 	}
 }
+
 // Keys ...
 func (d *DbStorage) Keys(pattern string) ([]string, error) {
 

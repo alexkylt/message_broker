@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"strings"
 )
+
 // MapStorage ...
 type MapStorage struct {
 	db map[string]string
 }
 
-
-
 // InitStorage ...
 func InitStorage() *MapStorage {
 	return &MapStorage{db: make(map[string]string)}
 }
+
 // Get ...
 func (s *MapStorage) Get(key string) (string, error) {
 	v, ok := s.db[key]
@@ -25,16 +25,19 @@ func (s *MapStorage) Get(key string) (string, error) {
 	}
 	return v, nil
 }
+
 // Set ...
 func (s *MapStorage) Set(key, value string) error {
 	s.db[key] = value
 	return nil
 }
+
 // Delete ...
 func (s *MapStorage) Delete(key string) error {
 	delete(s.db, key)
 	return nil
 }
+
 // Keys ...
 func (s *MapStorage) Keys(key string) ([]string, error) {
 	var keys []string
@@ -54,4 +57,3 @@ func (s *MapStorage) Keys(key string) ([]string, error) {
 	fmt.Println("KEY - ", key)
 	return keys, nil
 }
-

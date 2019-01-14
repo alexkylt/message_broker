@@ -66,6 +66,7 @@ goimports: build_docker_builder ## build_docker_builder Runs goimports against a
 		echo "Checking "$$package; \
 		files=$$(docker run $(DOCKER_BUILD_BUILDER) list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
 		if [ "$$files" ]; then \
+			echo $$files; \
 			goimports_output=$$(docker run --entrypoint="goimports" $(DOCKER_BUILD_BUILDER) -l -d $$files 2>&1); \
 			if [ "$$goimports_output" ]; then \
 				echo "$$goimports_output"; \

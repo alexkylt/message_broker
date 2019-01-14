@@ -1,4 +1,5 @@
 package storage
+
 // StrgInterface ... interface
 type StrgInterface interface {
 	Get(key string) (string, error)

@@ -29,12 +29,14 @@ type pattern struct {
 var keymap key
 
 var patternmap pattern
+
 // InitServer : initialize server with the appropriate storage
 func InitServer(port int, storage storage.StrgInterface) *Config {
 	server := &Config{port: port, storage: storage}
 	http.HandleFunc("/", server.generalHandler)
 	return server
 }
+
 // Run ...
 func (s *Config) Run() error {
 	url := fmt.Sprintf("%s:%d", s.host, s.port)
