@@ -92,7 +92,12 @@ docker_network: ##
 	@echo "START CREATE DOCKER NETWORK" $(timestamp)
 	@if [ $(shell docker network ls --format '{{.Name}}'| grep $(NETWORK)| wc -l) -eq 0 ]; then \
 		docker network create $(NETWORK); \
+		echo "lalai"; \
 	else \
+		for i in $(shell docker network inspect -f '{{range .Containers}}{{.Name}} {{end}}' $(NETWORK));\
+			do \
+				docker network disconnect -f $(NETWORK) $$i; \
+			done; \
 		docker network rm $(NETWORK); \
 		docker network create $(NETWORK); \
 	fi
@@ -135,9 +140,14 @@ docker_run_server: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_SERVER); \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
+	else \
+		echo starting $(DOCKER_IMAGE_SERVER) plus; \
+		docker container rm -f $(DOCKER_IMAGE_SERVER); \
+		docker ps -a; \
+		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
 	fi
 
-docker_run_client: docker_network ## Run default docker image
+docker_run_client: docker_run_server ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_CLIENT)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_CLIENT); \
 		docker run --rm --network $(NETWORK) --name=$(DOCKER_IMAGE_CLIENT) -it $(DOCKER_BUILD_CLIENT) --port=$(SERVER_PORT) \
@@ -159,4 +169,3 @@ clean: ## Remove previous builds
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
