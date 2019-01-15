@@ -28,7 +28,6 @@ func sendRequest(arguments string, host string, port int) error {
 
 	arguments = strings.TrimSuffix(arguments, "\n")
 	args := strings.Fields(arguments)
-	fmt.Println("args - ", args, len(args))
 	client := &http.Client{}
 	if args[0] == "" {
 		return nil
@@ -119,8 +118,6 @@ func sendRequest(arguments string, host string, port int) error {
 			os.Exit(1)
 		}
 		fmt.Printf("%s\n", string(contents))
-	default:
-		fmt.Println("TODO!!!!")
 	}
 
 	return nil

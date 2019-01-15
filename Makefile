@@ -28,14 +28,14 @@ SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 DOCKER_BUILD_BUILDER := builder
 BINARIES := $(CURRENT_DIR)/cmds
 # GOARCH = amd64
-goarch = $(shell go env GOARCH)
-goos = $(shell go env GOOS)
+# goarch = $(shell go env GOARCH)
+# goos = $(shell go env GOOS)
 timestamp := $(shell date "+%Y-%m-%d---%H-%M-%S")
 
 .PHONY: all build_server build_client
 
-all: build_docker_builder check docker_network build_server build_client docker_server docker_client docker_psql docker_run_psql docker_run_server docker_run_client
-# golint 
+all: clean build_docker_builder check docker_network build_server build_client docker_server docker_client docker_psql docker_run_psql docker_run_server docker_run_client
+
 check: build_docker_builder goimports govet golint
 
 
@@ -82,7 +82,6 @@ govet: build_docker_builder ## build_docker_builder Runs govet against all packa
 	@docker run -e CGO_ENABLED=0 $(DOCKER_BUILD_BUILDER) vet ./... || exit 1
 	@echo "GOVET success";
 
-# TODO FIXME!!!!
 golint: build_docker_builder ## build_docker_builder Runs golint against all packages.
 	@echo Running GOLINT
 	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) -set_exit_status ./... || exit 1
@@ -90,17 +89,26 @@ golint: build_docker_builder ## build_docker_builder Runs golint against all pac
 	@echo "GOLINT success";
 
 docker_network: ##
+	@echo "START CREATE DOCKER NETWORK" $(timestamp)
 	@if [ $(shell docker network ls --format '{{.Name}}'| grep $(NETWORK)| wc -l) -eq 0 ]; then \
-		@docker network create $(NETWORK); \
+		docker network create $(NETWORK); \
+	else \
+		docker network rm $(NETWORK); \
+		docker network create $(NETWORK); \
 	fi
+	@echo "END CREATE DOCKER NETWOK" $(timestamp)
 
 # -e GOOS=$(goos) -e GOARCH=$(goarch) -e CGO_ENABLED=0
-#--user $(id -u):$(id -g)1
-build_server: init build_docker_builder ## build_docker_builder Build the binary file for server	
+#--user $(id -u):$(id -g)1 -u $(id -u):$(id -g) 
+build_server: init build_docker_builder ## build_docker_builder Build the binary file for server
+	@echo "START BUILD SERVER" $(timestamp)	
 	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
+	@echo "END BUILD SERVER" $(timestamp)
 
 build_client: init build_docker_builder ## build_docker_builder Build the binary file for server
-	@docker run -u $(id -u):$(id -g) -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
+	@echo "START BUILD CLIENT" $(timestamp)	
+	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
+	@echo "END BUILD CLIENT" $(timestamp)	
 
 docker_run_psql: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
@@ -109,15 +117,19 @@ docker_run_psql: docker_network ## Run default docker image
 	fi
 
 docker_server: docker_network build_server ## Build default docker image
+	@echo "START BUILD SERVER DOCKER" $(timestamp)	
 	@docker build -t "$(DOCKER_BUILD_SERVER)" -f Dockerfile.server .
+	@echo "END BUILD SERVER DOCKER" $(timestamp)	
 
 docker_client: docker_network build_client ## Build default docker image
+	@echo "START BUILD CLIENT DOCKER" $(timestamp)
 	@docker build -t "$(DOCKER_BUILD_CLIENT)" -f Dockerfile.client .
+	@echo "END BUILD CLIENT DOCKER" $(timestamp)
 
 docker_psql: docker_network ## Build default docker image
-	@echo "START" $(timestamp)
+	@echo "START BUILD PSQL DOCKER" $(timestamp)
 	@docker build -t "$(DOCKER_BUILD_PSQL)" -f Dockerfile.psql .
-	@echo "END" $(timestamp)
+	@echo "END BUILD PSQL DOCKER" $(timestamp)
 
 docker_run_server: docker_network ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 0 ]; then \
@@ -138,6 +150,12 @@ docker_run_client: docker_network ## Run default docker image
 # docker ps --filter "status=exited" | grep 'weeks ago' | awk '{print $1}' | xargs --no-run-if-empty docker rm
 clean: ## Remove previous builds
 	@rm -r -f $(BINARIES)
+	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 1 ]; then \
+		docker container rm -f $(DOCKER_IMAGE_SERVER); \
+	fi
+	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 1 ]; then \
+		docker container rm -f $(DOCKER_IMAGE_PSQL); \
+	fi
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
