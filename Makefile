@@ -21,7 +21,7 @@ DOCKER_BUILD_CLIENT := $(DOCKER_IMAGE_CLIENT):$(DOCKER_TAG)
 DOCKER_BUILD_PSQL := $(DOCKER_IMAGE_PSQL):$(DOCKER_TAG)
 NETWORK := dockernet
 
-STORAGE_MODE ?= "map"
+STORAGE_MODE ?= "db"
 SERVER_PORT ?= 9090
 SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
@@ -119,7 +119,7 @@ build_client: init build_docker_builder ## build_docker_builder Build the binary
 run_psql: docker_network ## Run default docker image
 	@if [ $(STORAGE_MODE) = "db" ]; then \
 		if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
-			echo "START" $(DOCKER_IMAGE_PSQL); \
+			echo "START POSTGRES DATABASE" $(DOCKER_IMAGE_PSQL); \
 			docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
 		else \
 			docker container rm -f $(DOCKER_IMAGE_PSQL); \

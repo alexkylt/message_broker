@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-// MapStorage ...
+// MapStorage ... - structure for a map storage
 type MapStorage struct {
 	db map[string]string
 }
 
-// InitStorage ...
+// InitStorage ... - initiliaze map storage
 func InitStorage() *MapStorage {
 	return &MapStorage{db: make(map[string]string)}
 }
 
-// Get ...
+// Get ... - method used to gather KV pair from a storage
 func (s *MapStorage) Get(key string) (string, error) {
 	v, ok := s.db[key]
 	if !ok {
@@ -26,19 +26,19 @@ func (s *MapStorage) Get(key string) (string, error) {
 	return v, nil
 }
 
-// Set ...
+// Set ... - method used to insert/update KV pair to storage
 func (s *MapStorage) Set(key, value string) error {
 	s.db[key] = value
 	return nil
 }
 
-// Delete ...
+// Delete ... - method used to delete KV pair from a storage
 func (s *MapStorage) Delete(key string) error {
 	delete(s.db, key)
 	return nil
 }
 
-// Keys ...
+// Keys ... - method used to gather all KV pairs from a storage by pattern
 func (s *MapStorage) Keys(key string) ([]string, error) {
 	var keys []string
 	var values []string

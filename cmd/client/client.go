@@ -50,7 +50,6 @@ func sendRequest(arguments string, host string, port int) error {
 			}
 
 			defer resp.Body.Close()
-			// io.Copy(os.Stdout, resp.Body)
 			contents, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				fmt.Printf("%s", err)
@@ -111,13 +110,14 @@ func sendRequest(arguments string, host string, port int) error {
 		}
 
 		defer resp.Body.Close()
-		// io.Copy(os.Stdout, resp.Body)
 		contents, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Printf("%s", err)
 			os.Exit(1)
 		}
 		fmt.Printf("%s\n", string(contents))
+	default:
+		fmt.Printf("%s\n", "Valid commands are GET, SET, DEL, EXIT.")
 	}
 
 	return nil

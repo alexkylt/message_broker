@@ -10,7 +10,7 @@ import (
 	"github.com/alexkylt/message_broker/internal/pkg/storage"
 )
 
-// Config ...
+// Config ... - structure for host, port and storage
 type Config struct {
 	host    string
 	port    int
@@ -37,7 +37,7 @@ func InitServer(port int, storage storage.StrgInterface) *Config {
 	return server
 }
 
-// Run ...
+// Run ... - run the Server
 func (s *Config) Run() error {
 	url := fmt.Sprintf("%s:%d", s.host, s.port)
 
@@ -52,7 +52,6 @@ func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 
 		if err := s.getHandler(w, r); err != nil {
-			// w.httpCode(404)
 
 			log.Print("ERROR:")
 		}
@@ -64,14 +63,12 @@ func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.setHandler(w, r); err != nil {
-			// w.httpCode(404)
 
 			log.Print("ERROR:")
 		}
 	case "DELETE":
 		fmt.Println("DEL")
 		if err := s.delHandler(w, r); err != nil {
-			// w.httpCode(404)
 
 			log.Print("ERROR:")
 		}
@@ -83,7 +80,6 @@ func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err := s.postHandler(w, r); err != nil {
-			// w.httpCode(404)
 
 			log.Print("ERROR:", err)
 		}
@@ -91,9 +87,6 @@ func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Config) getHandler(w http.ResponseWriter, r *http.Request) error {
-	fmt.Println("GET params were:", r.URL.Query())
-	fmt.Println("getHandler", r.Form)
-	// fmt.Println("getHandler", r.ParseForm)
 	if err := r.ParseForm(); err != nil {
 		fmt.Println("error - ", err)
 		log.Print(err)
@@ -101,7 +94,6 @@ func (s *Config) getHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	for k, v := range r.Form {
 		fmt.Println("Form - ", k, v)
-		// value, _ := s.storage.Get(v[0])
 		value, err := s.storage.Get(k)
 		if err != nil {
 			fmt.Fprintf(w, value)
@@ -117,14 +109,12 @@ func (s *Config) getHandler(w http.ResponseWriter, r *http.Request) error {
 func (s *Config) setHandler(w http.ResponseWriter, r *http.Request) error {
 
 	err := json.NewDecoder(r.Body).Decode(&keymap)
-	//fmt.Println("SET params were:", r.URL.Query(), err)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return err
 	}
 	// TODO think about var
 	s.storage.Set(keymap.Name, keymap.Value)
-	// fmt.Println(k.Name, k.Value, value, s.storage, act)
 	return nil
 }
 
@@ -136,11 +126,7 @@ func (s *Config) delHandler(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	for k := range r.Form {
-		//fmt.Println("Before delete - ", k, s.storage)
-		//value := s.storage.Delete(k)
 		s.storage.Delete(k)
-		//fmt.Fprintf(w, value)
-		//fmt.Println("After delete - ", k, s.storage, value)
 	}
 	return nil
 }
@@ -152,7 +138,6 @@ func (s *Config) postHandler(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	// TODO think about var
-	//fmt.Fprintf(w, "PATTERN - %s", patternmap.Pattern)
 	keys, err := s.storage.Keys(patternmap.Pattern)
 	fmt.Fprintf(w, strings.Join(keys, ","))
 	return nil

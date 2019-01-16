@@ -17,12 +17,12 @@ const (
 	host       = "postgres"
 )
 
-// DbStorage ...
+// DbStorage ... - structure for a DB storage
 type DbStorage struct {
 	db *sql.DB
 }
 
-// InitStorage ...
+// InitStorage ... - initiliaze database storage
 func InitStorage() *DbStorage {
 
 	connection := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
@@ -36,7 +36,7 @@ func InitStorage() *DbStorage {
 	return &DbStorage{db: db}
 }
 
-// Get ...
+// Get ... - method used to gather KV pair from a storage
 func (d *DbStorage) Get(key string) (string, error) {
 
 	var keyValue string
@@ -59,7 +59,7 @@ func (d *DbStorage) Get(key string) (string, error) {
 	return keyValue, nil
 }
 
-// Set ...
+// Set ... - method used to insert/update KV pair to storage
 func (d *DbStorage) Set(key, value string) error {
 
 	var lastInsertID int
@@ -85,7 +85,7 @@ func (d *DbStorage) Set(key, value string) error {
 	return nil
 }
 
-// Delete ...
+// Delete ... - method used to delete KV pair from a storage
 func (d *DbStorage) Delete(key string) error {
 
 	sqlStatement := `delete from kv_storage where key_name=$1;`
@@ -104,7 +104,7 @@ func errHandler(err error) {
 	}
 }
 
-// Keys ...
+// Keys ... - method used to gather all KV pairs from a storage by pattern
 func (d *DbStorage) Keys(pattern string) ([]string, error) {
 
 	selectStmt := `SELECT key_value FROM kv_storage where key_name like '%$1%';`
