@@ -45,7 +45,7 @@ The possible commands are:
   * **GET** {key_name}                - get a KV pair from DB/map  
   * **SET** {key_name} {key_value}    - insert/update a KV pair to DB/map
   * **DEL** {key_name}                - delete a KV pair from DB/map
-  * **EXIT**                          - exit from the CLI
+  * **EXIT** - exit from the CLI
 
 CLI usage sample:
 ```
