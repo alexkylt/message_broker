@@ -72,5 +72,5 @@ SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
 ### Using
 
-If you already install project on your local machine using ```make all``` command you can re-run the project. To re-run the project you need run the following command: ```make docker_run_client```
+If you already install project on your local machine using ```make all``` command you can re-run the project. To re-run the project you need run the following command: ```make run_client``` - this command will run the Server too.
 If you want to use other storage or port - you should rebuild project: ```make all```
