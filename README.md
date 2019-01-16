@@ -59,9 +59,6 @@ $ GET key7
 (key7, There is no key7 key in th db.)
 $ EXIT
 ```
-                      - exit from the CLI
-
-
 
 ### Configuration
 
