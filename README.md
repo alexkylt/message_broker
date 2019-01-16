@@ -61,9 +61,19 @@ The possible commands are:
   * **SET** {key_name} {key_value}    - insert/update a KV pair to DB/map
   * **DEL** {key_name}                - delete a KV pair from DB/map
   * **EXIT**                          - exit from the CLI
-  
-  Server uses Postgres database as storage by defualt
-  
+
+
+
+### Configuration
+
+Server uses Postgres database as storage by defualt. The defaul server port is 9090.  If you want to use Go map as a storage instead of Postgres database or to user other Server port - you should specify appropriate values in the Makefile:
+
+```
 STORAGE_MODE ?= "db"
 SERVER_PORT ?= 9090
 SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
+```
+
+### Using
+
+If you already install project on your local machine using ```make all``` command you can re-run the project. To re-run the project you need run the following command: ```make docker_run_client```
