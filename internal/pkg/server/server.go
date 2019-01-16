@@ -54,7 +54,7 @@ func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 		if err := s.getHandler(w, r); err != nil {
 			// w.httpCode(404)
 
-			log.Print("ALARM!")
+			log.Print("ERROR:")
 		}
 	case "PUT":
 		fmt.Println("PUT")
@@ -66,14 +66,14 @@ func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 		if err := s.setHandler(w, r); err != nil {
 			// w.httpCode(404)
 
-			log.Print("ALARM!")
+			log.Print("ERROR:")
 		}
 	case "DELETE":
 		fmt.Println("DEL")
 		if err := s.delHandler(w, r); err != nil {
 			// w.httpCode(404)
 
-			log.Print("ALARM!")
+			log.Print("ERROR:")
 		}
 	case "POST":
 		fmt.Println("POST")
@@ -85,7 +85,7 @@ func (s *Config) generalHandler(w http.ResponseWriter, r *http.Request) {
 		if err := s.postHandler(w, r); err != nil {
 			// w.httpCode(404)
 
-			log.Print("ALARM!", err)
+			log.Print("ERROR:", err)
 		}
 	}
 }

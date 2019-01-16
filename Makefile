@@ -21,7 +21,7 @@ DOCKER_BUILD_CLIENT := $(DOCKER_IMAGE_CLIENT):$(DOCKER_TAG)
 DOCKER_BUILD_PSQL := $(DOCKER_IMAGE_PSQL):$(DOCKER_TAG)
 NETWORK := dockernet
 
-STORAGE_MODE ?= "db"
+STORAGE_MODE ?= "map"
 SERVER_PORT ?= 9090
 SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
@@ -31,10 +31,11 @@ BINARIES := $(CURRENT_DIR)/cmds
 # goarch = $(shell go env GOARCH)
 # goos = $(shell go env GOOS)
 timestamp := $(shell date "+%Y-%m-%d---%H-%M-%S")
+DOCKERFILE_PSQL := "Dockerfile.psql"
 
 .PHONY: all build_server build_client
 
-all: clean build_docker_builder check docker_network build_server build_client docker_server docker_client docker_psql docker_run_psql docker_run_server docker_run_client
+all: clean build_docker_builder check docker_network build_server build_client docker_server docker_client docker_psql run_psql run_server run_client
 
 check: build_docker_builder goimports govet golint
 
@@ -115,10 +116,16 @@ build_client: init build_docker_builder ## build_docker_builder Build the binary
 	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
 	@echo "END BUILD CLIENT" $(timestamp)	
 
-docker_run_psql: docker_network ## Run default docker image
-	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
-		echo "START" $(DOCKER_IMAGE_PSQL); \
-		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
+run_psql: docker_network ## Run default docker image
+	@if [ $(STORAGE_MODE) = "db" ]; then \
+		if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
+			echo "START" $(DOCKER_IMAGE_PSQL); \
+			docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
+		else \
+			docker container rm -f $(DOCKER_IMAGE_PSQL); \
+			docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
+			docker ps -a; \
+		fi \
 	fi
 
 docker_server: docker_network build_server ## Build default docker image
@@ -132,22 +139,24 @@ docker_client: docker_network build_client ## Build default docker image
 	@echo "END BUILD CLIENT DOCKER" $(timestamp)
 
 docker_psql: docker_network ## Build default docker image
-	@echo "START BUILD PSQL DOCKER" $(timestamp)
-	@docker build -t "$(DOCKER_BUILD_PSQL)" -f Dockerfile.psql .
-	@echo "END BUILD PSQL DOCKER" $(timestamp)
+	@if [ $(STORAGE_MODE) = "db" ]; then \
+		echo "START BUILD PSQL DOCKER" $(timestamp); \
+		docker build -t "$(DOCKER_BUILD_PSQL)" -f $(DOCKERFILE_PSQL) . ; \
+		echo "END BUILD PSQL DOCKER" $(timestamp); \
+	fi
 
-docker_run_server: docker_network ## Run default docker image
+run_server: docker_network run_psql ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_SERVER); \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
 	else \
 		echo starting $(DOCKER_IMAGE_SERVER) plus; \
 		docker container rm -f $(DOCKER_IMAGE_SERVER); \
-		docker ps -a; \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
+		docker ps -a; \
 	fi
 
-docker_run_client: docker_run_server ## Run default docker image
+run_client: run_server ## Run default docker image
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_CLIENT)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_CLIENT); \
 		docker run --rm --network $(NETWORK) --name=$(DOCKER_IMAGE_CLIENT) -it $(DOCKER_BUILD_CLIENT) --port=$(SERVER_PORT) \

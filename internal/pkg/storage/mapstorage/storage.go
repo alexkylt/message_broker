@@ -21,7 +21,7 @@ func (s *MapStorage) Get(key string) (string, error) {
 	v, ok := s.db[key]
 	if !ok {
 		errMsg := fmt.Sprintf("Key:%q is not found", key)
-		return "", errors.New(errMsg)
+		return errMsg, errors.New(errMsg)
 	}
 	return v, nil
 }
