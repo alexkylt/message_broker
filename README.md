@@ -6,10 +6,6 @@ Implementation of the server-client solution for storing key-value data.
 
 The Docker should be pre-installed to run the project.
 
-```
-Give examples
-```
-
 ### Installing
 
 First of all you should clone this repo on your local machine.
@@ -18,7 +14,7 @@ First of all you should clone this repo on your local machine.
 git clone git@github.com:alexkylt/message_broker.git
 ```
 
-Actuall after this you are able to up and run the project using Makefile from the repo folder:
+You need run the below command to up and run the project using Makefile from the repo folder:
 
 ```
 make all
@@ -43,9 +39,16 @@ After all steps from the "make all" command finished you will see the CLI in you
 $ 
 ```
 
-You need to specify the appropriate command along with key/value values you want to get, set or delete, e.g.:
-```
+You need to specify the appropriate command along with key/value values you want to get, set or delete.
 
+The possible commands are:
+  * **GET** {key_name}                - get a KV pair from DB/map  
+  * **SET** {key_name} {key_value}    - insert/update a KV pair to DB/map
+  * **DEL** {key_name}                - delete a KV pair from DB/map
+  * **EXIT**                          - exit from the CLI
+
+CLI usage sample:
+```
 $ GET key7
 (key7, There is no key7 key in th db.)
 $ SET key7 qwerty
@@ -56,11 +59,7 @@ $ GET key7
 (key7, There is no key7 key in th db.)
 $ EXIT
 ```
-The possible commands are:
-  * **GET** {key_name}                - get a KV pair from DB/map  
-  * **SET** {key_name} {key_value}    - insert/update a KV pair to DB/map
-  * **DEL** {key_name}                - delete a KV pair from DB/map
-  * **EXIT**                          - exit from the CLI
+                      - exit from the CLI
 
 
 
@@ -77,3 +76,4 @@ SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 ### Using
 
 If you already install project on your local machine using ```make all``` command you can re-run the project. To re-run the project you need run the following command: ```make docker_run_client```
+If you want to use other storage or port - you should rebuild project: ```make all```
