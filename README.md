@@ -1,4 +1,4 @@
-# Message broked
+# Message broker
 
 Implementation of the server-client solution for storing key-value data.
 
