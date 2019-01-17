@@ -21,7 +21,7 @@ DOCKER_BUILD_CLIENT := $(DOCKER_IMAGE_CLIENT):$(DOCKER_TAG)
 DOCKER_BUILD_PSQL := $(DOCKER_IMAGE_PSQL):$(DOCKER_TAG)
 NETWORK := dockernet
 
-STORAGE_MODE ?= "db"
+STORAGE_MODE ?= "map"
 SERVER_PORT ?= 9090
 SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
@@ -32,6 +32,9 @@ BINARIES := $(CURRENT_DIR)/cmds
 # goos = $(shell go env GOOS)
 timestamp := $(shell date "+%Y-%m-%d---%H-%M-%S")
 DOCKERFILE_PSQL := "Dockerfile.psql"
+DOCKERFILE_SERVER := "Dockerfile.server"
+DOCKERFILE_CLIENT := "Dockerfile.client"
+DOCKERFILE_BUILDER := "Dockerfile.build"
 
 .PHONY: all build_server build_client
 
@@ -56,7 +59,7 @@ init:
 	
 
 build_docker_builder: init ## Build default docker image
-	@docker build -t "$(DOCKER_BUILD_BUILDER)" -f Dockerfile.build .
+	@docker build -t "$(DOCKER_BUILD_BUILDER)" -f $(DOCKERFILE_BUILDER) .
 	# @if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_BUILD_BUILDER)$$ | wc -l) -eq 0 ]; then \
 	# fi
 
@@ -130,12 +133,12 @@ run_psql: docker_network ## Run default docker image
 
 docker_server: docker_network build_server ## Build default docker image
 	@echo "START BUILD SERVER DOCKER" $(timestamp)	
-	@docker build -t "$(DOCKER_BUILD_SERVER)" -f Dockerfile.server .
+	@docker build -t "$(DOCKER_BUILD_SERVER)" -f $(DOCKERFILE_SERVER) .
 	@echo "END BUILD SERVER DOCKER" $(timestamp)	
 
 docker_client: docker_network build_client ## Build default docker image
 	@echo "START BUILD CLIENT DOCKER" $(timestamp)
-	@docker build -t "$(DOCKER_BUILD_CLIENT)" -f Dockerfile.client .
+	@docker build -t "$(DOCKER_BUILD_CLIENT)" -f $(DOCKERFILE_CLIENT) .
 	@echo "END BUILD CLIENT DOCKER" $(timestamp)
 
 docker_psql: docker_network ## Build default docker image
