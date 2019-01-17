@@ -108,16 +108,17 @@ docker_network: ##
 	@echo "END CREATE DOCKER NETWOK" $(timestamp)
 
 # -e GOOS=$(goos) -e GOARCH=$(goarch) -e CGO_ENABLED=0
-#--user $(id -u):$(id -g)1 -u $(id -u):$(id -g) 
 build_server: init build_docker_builder ## build_docker_builder Build the binary file for server
 	@echo "START BUILD SERVER" $(timestamp)	
-	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
+	@docker run -e CGO_ENABLED=0 -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
 	@echo "END BUILD SERVER" $(timestamp)
 
 build_client: init build_docker_builder ## build_docker_builder Build the binary file for server
 	@echo "START BUILD CLIENT" $(timestamp)	
-	@docker run -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
-	@echo "END BUILD CLIENT" $(timestamp)	
+	@docker run -e CGO_ENABLED=0 -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
+	@echo "END BUILD CLIENT" $(timestamp)
+
+build: init build_docker_builder build_server build_client
 
 run_psql: docker_network ## Run default docker image
 	@if [ $(STORAGE_MODE) = "db" ]; then \
