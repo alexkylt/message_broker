@@ -8,11 +8,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"strings"
-
 	"net/http"
-	_ "net/url"
 	"os"
+	"strings"
 )
 
 type key struct {

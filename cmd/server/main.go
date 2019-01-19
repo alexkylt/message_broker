@@ -2,12 +2,10 @@ package main
 
 import (
 	"flag"
-	_ "reflect"
-
-	"github.com/alexkylt/message_broker/internal/pkg/storage/mapstorage"
 
 	"github.com/alexkylt/message_broker/internal/pkg/server"
 	"github.com/alexkylt/message_broker/internal/pkg/storage/dbstorage"
+	"github.com/alexkylt/message_broker/internal/pkg/storage/mapstorage"
 )
 
 func main() {
