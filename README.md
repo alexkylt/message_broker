@@ -62,7 +62,7 @@ $ EXIT
 
 ### Configuration
 
-Server uses Postgres database as storage by defualt. The defaul server port is 9090.  If you want to use Go map as a storage instead of Postgres database or to user other Server port - you should specify appropriate values in the Makefile:
+Server uses Postgres database as storage by defualt. The defaul server port is 9090.  If you want to use Go map as a storage instead of Postgres database or to use other Server port - you should specify appropriate values in the Makefile:
 
 ```
 STORAGE_MODE ?= "map"
@@ -72,6 +72,6 @@ SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
 ### Using
 
-If you already install project on your local machine using ```make all``` command you can rebuild the project. You should run this command if you want to use other storage or port.
+If you already install project on your local machine using ```make all``` command you can rebuild the project. You should run the ```make all``` command again to rebuild the project if you want to use other storage or port.
 
 After exiting CLI you  can run the project by the following command: ```make run_client``` - this command will run the Server too.
