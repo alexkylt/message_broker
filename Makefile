@@ -6,7 +6,6 @@ BIN_DIR := $(GOPATH)/bin
 PKG := "github.com/alexkylt/message_broker"
 # Packages lists
 PACKAGES=$(shell go list ./...)
-GOFLAGS ?= $(GOFLAGS:)
 SERVER_PKG_BUILD := "${PKG}/cmd/server"
 CLIENT_PKG_BUILD := "${PKG}/cmd/client"
 BINARIES := "cmds"
@@ -160,6 +159,7 @@ run_client: run_server ## Run client
 		echo starting $(DOCKER_IMAGE_CLIENT); \
 		docker run --rm --network $(NETWORK) --name=$(DOCKER_IMAGE_CLIENT) -it $(DOCKER_BUILD_CLIENT) --port=$(SERVER_PORT) \
 		--host=$(SERVER_HOST); \
+		echo finish; \
 	fi
 
 clean: ## Remove previous builds

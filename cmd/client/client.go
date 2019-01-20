@@ -93,27 +93,27 @@ func sendRequest(arguments string, host string, port int) error {
 			defer resp.Body.Close()
 			io.Copy(os.Stdout, resp.Body)
 		}
-	case "KEYS":
-		url := fmt.Sprintf("http://%s:%d", host, port)
-		str := pattern{Pattern: args[1]}
-		buff := new(bytes.Buffer)
-		json.NewEncoder(buff).Encode(str)
-		req, err := http.NewRequest("POST", url, buff)
+	/*case "KEYS":
+	url := fmt.Sprintf("http://%s:%d", host, port)
+	str := pattern{Pattern: args[1]}
+	buff := new(bytes.Buffer)
+	json.NewEncoder(buff).Encode(str)
+	req, err := http.NewRequest("POST", url, buff)
 
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 
-		defer resp.Body.Close()
-		contents, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("%s", err)
-			os.Exit(1)
-		}
-		fmt.Printf("%s\n", string(contents))
+	defer resp.Body.Close()
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
+	fmt.Printf("%s\n", string(contents))*/
 	default:
 		fmt.Printf("%s\n", "Valid commands are GET, SET, DEL, EXIT.")
 	}
