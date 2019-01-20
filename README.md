@@ -21,8 +21,8 @@ make all
 ```
 
 The above command will build and run the full project:
-1) Docker container for a build purposer("go" entry point);
-2) Run the "check" command(goimports, govet, golint);
+1) Docker container for a build purpose("go" entry point);
+2) Run the "check" rule(goimports, govet, golint);
 3) Create docker network;
 4) Build server part;
 5) Build client part;
@@ -30,7 +30,7 @@ The above command will build and run the full project:
 7) Build and run docker container for Server;
 8) Build and run docker container for Client;
 
-After all steps from the "make all" command finished you will see the CLI in your terminal:
+After all steps from the ```make all``` command finished you will see the CLI in your terminal:
 
 
 
@@ -62,15 +62,16 @@ $ EXIT
 
 ### Configuration
 
-Server uses Postgres database as storage by defualt. The defaul server port is 9090.  If you want to use Go map as a storage instead of Postgres database or to user other Server port - you should specify appropriate values in the Makefile:
+Server uses Postgres database as storage by defualt. The defaul server port is 9090.  If you want to use Go map as a storage instead of Postgres database or to use other Server port - you should specify appropriate values in the Makefile:
 
 ```
-STORAGE_MODE ?= "db"
+STORAGE_MODE ?= "map"
 SERVER_PORT ?= 9090
 SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 ```
 
 ### Using
 
-If you already install project on your local machine using ```make all``` command you can re-run the project. To re-run the project you need run the following command: ```make run_client``` - this command will run the Server too.
-If you want to use other storage or port - you should rebuild project: ```make all```
+If you already install project on your local machine using ```make all``` command you can rebuild the project. You should run the ```make all``` command again to rebuild the project if you want to use other storage or port.
+
+After exiting CLI you  can run the project by the following command: ```make run_client``` - this command will run the Server too.

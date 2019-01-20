@@ -6,11 +6,9 @@ BIN_DIR := $(GOPATH)/bin
 PKG := "github.com/alexkylt/message_broker"
 # Packages lists
 PACKAGES=$(shell go list ./...)
-GOFLAGS ?= $(GOFLAGS:)
 SERVER_PKG_BUILD := "${PKG}/cmd/server"
 CLIENT_PKG_BUILD := "${PKG}/cmd/client"
 BINARIES := "cmds"
-# PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/)
 
 DOCKER_TAG = v5
 DOCKER_IMAGE_SERVER = server
@@ -21,16 +19,12 @@ DOCKER_BUILD_CLIENT := $(DOCKER_IMAGE_CLIENT):$(DOCKER_TAG)
 DOCKER_BUILD_PSQL := $(DOCKER_IMAGE_PSQL):$(DOCKER_TAG)
 NETWORK := dockernet
 
-STORAGE_MODE ?= "map"
+STORAGE_MODE ?= "db"
 SERVER_PORT ?= 9090
 SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
 DOCKER_BUILD_BUILDER := builder
 BINARIES := $(CURRENT_DIR)/cmds
-# GOARCH = amd64
-# goarch = $(shell go env GOARCH)
-# goos = $(shell go env GOOS)
-timestamp := $(shell date "+%Y-%m-%d---%H-%M-%S")
 DOCKERFILE_PSQL := "Dockerfile.psql"
 DOCKERFILE_SERVER := "Dockerfile.server"
 DOCKERFILE_CLIENT := "Dockerfile.client"
@@ -58,12 +52,10 @@ init:
 	fi \
 	
 
-build_docker_builder: init ## Build default docker image
+build_docker_builder: init ## Build builder image
 	@docker build -t "$(DOCKER_BUILD_BUILDER)" -f $(DOCKERFILE_BUILDER) .
-	# @if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_BUILD_BUILDER)$$ | wc -l) -eq 0 ]; then \
-	# fi
 
-goimports: build_docker_builder ## build_docker_builder Runs goimports against all packages.
+goimports: build_docker_builder ## Run goimports
 	@echo Running goimports
 
 	@for package in $(PACKAGES); do \
@@ -81,22 +73,22 @@ goimports: build_docker_builder ## build_docker_builder Runs goimports against a
 	done
 	@echo "goimports success"; \
 
-govet: build_docker_builder ## build_docker_builder Runs govet against all packages.
+govet: build_docker_builder ## Run govet
 	@echo Running GOVET
 	@docker run -e CGO_ENABLED=0 $(DOCKER_BUILD_BUILDER) vet ./... || exit 1
 	@echo "GOVET success";
 
-golint: build_docker_builder ## build_docker_builder Runs golint against all packages.
+golint: build_docker_builder ## Run golint
 	@echo Running GOLINT
 	@docker run --entrypoint="golint" $(DOCKER_BUILD_BUILDER) -set_exit_status ./... || exit 1
 	
 	@echo "GOLINT success";
 
-docker_network: ##
-	@echo "START CREATE DOCKER NETWORK" $(timestamp)
+docker_network: ## Create docker network
+	@echo "START CREATE DOCKER NETWORK" 
 	@if [ $(shell docker network ls --format '{{.Name}}'| grep $(NETWORK)| wc -l) -eq 0 ]; then \
 		docker network create $(NETWORK); \
-		echo "lalai"; \
+		echo finish; \
 	else \
 		for i in $(shell docker network inspect -f '{{range .Containers}}{{.Name}} {{end}}' $(NETWORK));\
 			do \
@@ -104,73 +96,72 @@ docker_network: ##
 			done; \
 		docker network rm $(NETWORK); \
 		docker network create $(NETWORK); \
+		echo finish; \
 	fi
-	@echo "END CREATE DOCKER NETWOK" $(timestamp)
+	@echo "END CREATE DOCKER NETWOK" 
 
-# -e GOOS=$(goos) -e GOARCH=$(goarch) -e CGO_ENABLED=0
-build_server: init build_docker_builder ## build_docker_builder Build the binary file for server
-	@echo "START BUILD SERVER" $(timestamp)	
+build_server: init build_docker_builder ## Build server 
+	@echo "START BUILD SERVER" 	
 	@docker run -e CGO_ENABLED=0 -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(SERVER_BIN) $(SERVER_PKG_BUILD)
-	@echo "END BUILD SERVER" $(timestamp)
+	@echo "END BUILD SERVER" 
 
-build_client: init build_docker_builder ## build_docker_builder Build the binary file for server
-	@echo "START BUILD CLIENT" $(timestamp)	
+build_client: init build_docker_builder ## Build client 
+	@echo "START BUILD CLIENT" 	
 	@docker run -e CGO_ENABLED=0 -v $(BINARIES):$(BIN_DIR) $(DOCKER_BUILD_BUILDER) build -i -v -o $(BIN_DIR)/$(CLIENT_BIN) $(CLIENT_PKG_BUILD)
-	@echo "END BUILD CLIENT" $(timestamp)
+	@echo "END BUILD CLIENT" 
 
 build: init build_docker_builder build_server build_client
 
-run_psql: docker_network ## Run default docker image
+run_psql: docker_network ## Run PSQL
 	@if [ $(STORAGE_MODE) = "db" ]; then \
 		if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 0 ]; then \
 			echo "START POSTGRES DATABASE" $(DOCKER_IMAGE_PSQL); \
 			docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
+			echo finish; \
 		else \
 			docker container rm -f $(DOCKER_IMAGE_PSQL); \
 			docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_PSQL) -d -p 5433:5432 $(DOCKER_BUILD_PSQL); \
-			docker ps -a; \
+			echo finish; \
 		fi \
 	fi
 
-docker_server: docker_network build_server ## Build default docker image
-	@echo "START BUILD SERVER DOCKER" $(timestamp)	
+docker_server: docker_network build_server ## Build server image
+	@echo "START BUILD SERVER DOCKER" 	
 	@docker build -t "$(DOCKER_BUILD_SERVER)" -f $(DOCKERFILE_SERVER) .
-	@echo "END BUILD SERVER DOCKER" $(timestamp)	
+	@echo "END BUILD SERVER DOCKER" 	
 
-docker_client: docker_network build_client ## Build default docker image
-	@echo "START BUILD CLIENT DOCKER" $(timestamp)
+docker_client: docker_network build_client ## Build client image
+	@echo "START BUILD CLIENT DOCKER" 
 	@docker build -t "$(DOCKER_BUILD_CLIENT)" -f $(DOCKERFILE_CLIENT) .
-	@echo "END BUILD CLIENT DOCKER" $(timestamp)
+	@echo "END BUILD CLIENT DOCKER" 
 
-docker_psql: docker_network ## Build default docker image
+docker_psql: docker_network ## Build PSQL image
 	@if [ $(STORAGE_MODE) = "db" ]; then \
-		echo "START BUILD PSQL DOCKER" $(timestamp); \
+		echo "START BUILD PSQL DOCKER" ; \
 		docker build -t "$(DOCKER_BUILD_PSQL)" -f $(DOCKERFILE_PSQL) . ; \
-		echo "END BUILD PSQL DOCKER" $(timestamp); \
+		echo "END BUILD PSQL DOCKER" ; \
 	fi
 
-run_server: docker_network run_psql ## Run default docker image
+run_server: docker_network run_psql ## Run server
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_SERVER); \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
+		echo finish; \
 	else \
 		echo starting $(DOCKER_IMAGE_SERVER) plus; \
 		docker container rm -f $(DOCKER_IMAGE_SERVER); \
 		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
-		docker ps -a; \
+		echo finish; \
 	fi
 
-run_client: run_server ## Run default docker image
+run_client: run_server ## Run client
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_CLIENT)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_CLIENT); \
 		docker run --rm --network $(NETWORK) --name=$(DOCKER_IMAGE_CLIENT) -it $(DOCKER_BUILD_CLIENT) --port=$(SERVER_PORT) \
 		--host=$(SERVER_HOST); \
+		echo finish; \
 	fi
 
-# @docker stop $(shell docker ps -a -q)
-# @docker rm $(shell docker ps -a -q)
-# @docker image prune --all
-# docker ps --filter "status=exited" | grep 'weeks ago' | awk '{print $1}' | xargs --no-run-if-empty docker rm
 clean: ## Remove previous builds
 	@rm -r -f $(BINARIES)
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 1 ]; then \
