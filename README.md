@@ -70,7 +70,7 @@ STORAGE_MODE ?= "map"
 SERVER_PORT ?= 9090
 ```
 
-NOTE: You should not specify the ```SERVER_HOST_NAME``` as ```localhost``` or ```127.0.0.1```. Server/Client/Database container use docker network for communication.
+NOTE: You should not specify the ```SERVER_HOST_NAME``` as ```localhost``` or ```127.0.0.1```. Server/Client/Database containers use docker network for communication.
 
 ### Using
 
