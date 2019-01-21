@@ -65,10 +65,12 @@ $ EXIT
 Server uses Postgres database as storage by defualt. The defaul server port is 9090.  If you want to use Go map as a storage instead of Postgres database or to use other Server port - you should specify appropriate values in the Makefile:
 
 ```
+SERVER_HOST_NAME = server
 STORAGE_MODE ?= "map"
 SERVER_PORT ?= 9090
-SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 ```
+
+NOTE: You should not specify the ```SERVER_HOST_NAME``` as ```localhost``` or ```127.0.0.1```. Server/Client/Database container use docker network for communication.
 
 ### Using
 
