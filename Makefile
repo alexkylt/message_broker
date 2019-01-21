@@ -11,17 +11,16 @@ CLIENT_PKG_BUILD := "${PKG}/cmd/client"
 BINARIES := "cmds"
 
 DOCKER_TAG = v5
-DOCKER_IMAGE_SERVER = server
+SERVER_HOST_NAME = server
 DOCKER_IMAGE_CLIENT = client
 DOCKER_IMAGE_PSQL = postgres
-DOCKER_BUILD_SERVER := $(DOCKER_IMAGE_SERVER):$(DOCKER_TAG)
+DOCKER_BUILD_SERVER := $(SERVER_HOST_NAME):$(DOCKER_TAG)
 DOCKER_BUILD_CLIENT := $(DOCKER_IMAGE_CLIENT):$(DOCKER_TAG)
 DOCKER_BUILD_PSQL := $(DOCKER_IMAGE_PSQL):$(DOCKER_TAG)
 NETWORK := dockernet
 
 STORAGE_MODE ?= "db"
 SERVER_PORT ?= 9090
-SERVER_HOST ?= $(DOCKER_IMAGE_SERVER)
 
 DOCKER_BUILD_BUILDER := builder
 BINARIES := $(CURRENT_DIR)/cmds
@@ -143,14 +142,14 @@ docker_psql: docker_network ## Build PSQL image
 	fi
 
 run_server: docker_network run_psql ## Run server
-	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 0 ]; then \
-		echo starting $(DOCKER_IMAGE_SERVER); \
-		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
+	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(SERVER_HOST_NAME)$$ | wc -l) -eq 0 ]; then \
+		echo starting $(SERVER_HOST_NAME); \
+		docker run --network $(NETWORK) --name=$(SERVER_HOST_NAME) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
 		echo finish; \
 	else \
-		echo starting $(DOCKER_IMAGE_SERVER) plus; \
-		docker container rm -f $(DOCKER_IMAGE_SERVER); \
-		docker run --network $(NETWORK) --name=$(DOCKER_IMAGE_SERVER) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
+		echo starting $(SERVER_HOST_NAME) plus; \
+		docker container rm -f $(SERVER_HOST_NAME); \
+		docker run --network $(NETWORK) --name=$(SERVER_HOST_NAME) -d -p $(SERVER_PORT):$(SERVER_PORT) $(DOCKER_BUILD_SERVER) --port=$(SERVER_PORT) --mode=$(STORAGE_MODE) > /dev/null; \
 		echo finish; \
 	fi
 
@@ -164,8 +163,8 @@ run_client: run_server ## Run client
 
 clean: ## Remove previous builds
 	@rm -r -f $(BINARIES)
-	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_SERVER)$$ | wc -l) -eq 1 ]; then \
-		docker container rm -f $(DOCKER_IMAGE_SERVER); \
+	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(SERVER_HOST_NAME)$$ | wc -l) -eq 1 ]; then \
+		docker container rm -f $(SERVER_HOST_NAME); \
 	fi
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_PSQL)$$ | wc -l) -eq 1 ]; then \
 		docker container rm -f $(DOCKER_IMAGE_PSQL); \
