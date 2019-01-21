@@ -157,7 +157,7 @@ run_client: run_server ## Run client
 	@if [ $(shell docker ps -a --no-trunc --quiet --filter name=^/$(DOCKER_IMAGE_CLIENT)$$ | wc -l) -eq 0 ]; then \
 		echo starting $(DOCKER_IMAGE_CLIENT); \
 		docker run --rm --network $(NETWORK) --name=$(DOCKER_IMAGE_CLIENT) -it $(DOCKER_BUILD_CLIENT) --port=$(SERVER_PORT) \
-		--host=$(SERVER_HOST); \
+		--host=$(SERVER_HOST_NAME); \
 		echo finish; \
 	fi
 
